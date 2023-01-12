@@ -15,3 +15,6 @@ ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 
 [compat]
 julia = "1"
+
+[extras]
+GraphGraphviz = "692621d9-3805-4619-b662-17f1a5556d87"
