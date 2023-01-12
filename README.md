@@ -15,9 +15,16 @@ julia> f(a, b) = sum(a' * b + a * b')
 f (generic function with 1 method)
 
 julia> plothtml(f, randn(2, 2), randn(2, 2))
-Process(`xdg-open /tmp/jl_7IzAZEdqtg.html`, ProcessExited(0))
 ```
 
 results in something like
 
-![Screenshot_20230112_151610](https://user-images.githubusercontent.com/11074788/212105118-577c23a6-37a8-4ebd-96c9-99cfb28e8edd.png)
+![Screenshot_20230112_154728](https://user-images.githubusercontent.com/11074788/212113634-a9482df8-27fd-44de-b502-b0ca7456e95b.png)
+
+and with GraphViz:
+
+```julia
+julia> plotgraphviz(f, randn(2, 2), randn(2, 2); display=true)
+```
+
+![graph dot](https://user-images.githubusercontent.com/11074788/212113704-633bc1c9-efa7-4b8b-aeed-f657d2fb7f0a.png)
