@@ -12,7 +12,17 @@ export make_graph, plothtml, plotgraphviz
 variable_label(x, index) = "x$(index)\n$(typeof(x))"
 variable_label(x::Real, index) = "x$(index)\n$(typeof(ReverseDiff.value(x)))"
 variable_label(x::AbstractArray, index) = "x$(index)\n$(typeof(ReverseDiff.value(x)))\nSize: $(size(x))"
+
 instruction_label(instruction) = string(instruction.func)
+function instruction_label(instruction::SpecialInstruction{typeof(ReverseDiff.∇broadcast)})
+    try
+        bc_func = bc.cache[2]
+        return "∇broadcast($(bc_func.f.f))"
+    catch e
+        @warn "Failed to infer label for `∇broadcast` due to $(string(e))"
+        return "∇broadcast"
+    end
+end
 
 hasorigin(x) = false
 hasorigin(x::ReverseDiff.TrackedReal) = ReverseDiff.hasorigin(x)
