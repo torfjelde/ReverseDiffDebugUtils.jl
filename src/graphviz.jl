@@ -3,10 +3,10 @@ export plotgraphviz
 using .ReverseDiffDebugUtils: ReverseDiffDebugUtils
 using .GraphGraphviz
 
-function ReverseDiffDebugUtilsplotgraphviz(g::MetaDiGraph; kwargs...)
+function ReverseDiffDebugUtils.plotgraphviz(g::MetaDiGraph; kwargs...)
     auto_kwargs = (
-        labels=["\"$(x)\"" for x in ReverseDiffDebugUtilsnodelabels(g)],
-        nodeedgecolors=ReverseDiffDebugUtilsnodecolors(g),
+        labels=["\"$(x)\"" for x in ReverseDiffDebugUtils.nodelabels(g)],
+        nodeedgecolors=ReverseDiffDebugUtils.nodecolors(g),
     )
     return to_graphviz(g; merge(auto_kwargs, kwargs)...)
 end
