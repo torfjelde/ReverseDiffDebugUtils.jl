@@ -8,70 +8,110 @@ using OrderedCollections: OrderedDict
 
 export make_graph, plothtml
 
-variable_label(x, index) = "x$(index)"
+variable_label(x, index) = "x$(index)\n$(typeof(x))"
+variable_label(x::Real, index) = "x$(index)\n$(typeof(ReverseDiff.value(x)))"
 variable_label(x::AbstractArray, index) = "x$(index)\n$(typeof(ReverseDiff.value(x)))\nSize: $(size(x))"
 instruction_label(instruction) = string(instruction.func)
 
+hasorigin(x) = false
+hasorigin(x::ReverseDiff.TrackedReal) = ReverseDiff.hasorigin(x)
+
 function make_gradient_tape(f, inputs...)
-    return ReverseDiff.GradientTape(f, inputs).tape
+    return ReverseDiff.GradientTape(f, inputs)
 end
 
+function add_instruction!(g::MetaDiGraph, instruction, instruction_to_index)
+    add_vertex!(g)
+    index = nv(g)
+    set_prop!(g, index, :nodetype, :instruction)
+    set_prop!(g, index, :label, instruction_label(instruction))
+    set_prop!(g, index, :instruction, instruction)
+    return index
+end
+
+function get_or_add_variable!(g::MetaDiGraph, x, variable_to_index; kwargs...)
+    return haskey(variable_to_index, objectid(x)) ? variable_to_index[objectid(x)] : add_variable!(g, x, variable_to_index; kwargs...)
+end
+function add_variable!(g::MetaDiGraph, x, variable_to_index)
+    add_vertex!(g)
+    index = length(vertices(g))
+    variable_to_index[objectid(x)] = index
+    set_prop!(g, index, :nodetype, :variable)
+    set_prop!(g, index, :label, variable_label(x, index))
+    set_prop!(g, index, :variable, x)
+    set_prop!(g, index, :is_input, false)
+    set_prop!(g, index, :is_output, false)
+
+    if hasorigin(x)
+        origin = x.origin
+        origin_index = get_or_add_variable!(g, origin, variable_to_index)
+        add_edge!(g, origin_index, index)
+    end
+
+    return index
+end
+
+# TODO: Handle the case of length 0 tape, i.e. something like `f(x) = x[1]` results in
+# just an output with an `origin`.
 make_graph(g, inputs...) = make_graph(make_gradient_tape(g, inputs...))
-make_graph(gradient_tape::ReverseDiff.GradientTape) = make_graph(gradient_tape.tape)
-function make_graph(instructions::AbstractVector)
+function make_graph(tape::ReverseDiff.GradientTape)
+    instructions = tape.tape
+
     # Construct graph.
     g = MetaDiGraph()
 
     # Build the edges and add instructions as vertices.
+    # TODO: Use `WeakRefDict`?
     variable_to_index = OrderedDict()
     instruction_to_index = OrderedDict()
-    index_to_label = OrderedDict()
+
+    # Add the original function.
+    # v = add_instruction!(g, tape, instruction_to_index)
+
+    # Add the inputs.
+    base_input = tape.input
+    base_input = base_input isa Tuple ? base_input : (base_input,)
+    for input in base_input
+        index = add_variable!(g, input, variable_to_index)
+        set_prop!(g, index, :is_input, true)
+    end
+
+    # Add the outputs.
+    base_output = tape.output
+    base_output = base_output isa Tuple ? base_output : (base_output,)
+    for output in base_output
+        index = add_variable!(g, output, variable_to_index)
+        set_prop!(g, index, :is_output, true)
+    end
+
+    # Go over all the instructions.
     for instruction in instructions
         # Add the instruction vertex.
-        v = (add_vertex!(g); nv(g))
-        set_prop!(g, v, :type, :instruction)
-        set_prop!(g, v, :label, instruction_label(instruction))
-        # set_prop!(g, v, :instruction, instruction)
+        v = add_instruction!(g, instruction, instruction_to_index)
 
+        # TODO: Connect `TrackedReal` to `TrackedArray` if it has an origin.
         input = instruction.input
         input = input isa Tuple ? input : (input,)
         for i in input
-            if !haskey(variable_to_index, i)
-                add_vertex!(g)
-                i_idx = nv(g)
-                variable_to_index[i] = i_idx
-                variable_index = length(variable_to_index)
-
-                set_prop!(g, i_idx, :type, :variable)
-                set_prop!(g, i_idx, :label, variable_label(i, variable_index))
-                # set_prop!(g, i_idx, :variable, i)
-            end
-            add_edge!(g, variable_to_index[i], v)
+            index = get_or_add_variable!(g, i, variable_to_index)
+            add_edge!(g, index, v)
         end
 
         output = instruction.output
         output = output isa Tuple ? output : (output,)
         for o in output
-            if !haskey(variable_to_index, o)
-                add_vertex!(g)
-                o_idx = nv(g)
-                variable_to_index[o] = o_idx
-                variable_index = length(variable_to_index)
-
-                set_prop!(g, o_idx, :type, :variable)
-                set_prop!(g, o_idx, :label, variable_label(o, variable_index))
-                # set_prop!(g, o_idx, :variable, o)
-            end
-            add_edge!(g, v, variable_to_index[o])
+            index = get_or_add_variable!(g, o, variable_to_index)
+            add_edge!(g, v, index)
         end
     end
 
     return g
 end
 
+variables(g::MetaDiGraph) = [v for v in vertices(g) if get_prop(g, v, :nodetype) == :variable]
 
 function plothtml(f, args...; kwargs...)
-    plothtml(make_graph(f, args...); kwargs...)
+    return plothtml(make_graph(f, args...); kwargs...)
 end
 function plothtml(g::MetaDiGraph; kwargs...)
     nodelabels = [get_prop(g, v, :label) for v in vertices(g)]
