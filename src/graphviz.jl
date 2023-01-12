@@ -1,7 +1,7 @@
 export plotgraphviz
 
 using .ReverseDiffDebugUtils: ReverseDiffDebugUtils
-using GraphGraphviz
+using .GraphGraphviz
 
 function ReverseDiffDebugUtilsplotgraphviz(g::MetaDiGraph; kwargs...)
     auto_kwargs = (
