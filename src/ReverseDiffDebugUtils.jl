@@ -15,6 +15,10 @@ instruction_label(instruction) = string(instruction.func)
 
 hasorigin(x) = false
 hasorigin(x::ReverseDiff.TrackedReal) = ReverseDiff.hasorigin(x)
+hasorigin(x::AbstractArray{<:ReverseDiff.TrackedReal}) = any(hasorigin, x)
+
+getorigins(x::ReverseDiff.TrackedReal) = [x.origin]
+getorigins(x::AbstractArray{<:ReverseDiff.TrackedReal}) = map(Base.Fix2(getproperty, :origin),filter(hasorigin, x))
 
 function make_gradient_tape(f, inputs...)
     return ReverseDiff.GradientTape(f, inputs)
@@ -43,9 +47,10 @@ function add_variable!(g::MetaDiGraph, x, variable_to_index)
     set_prop!(g, index, :is_output, false)
 
     if hasorigin(x)
-        origin = x.origin
-        origin_index = get_or_add_variable!(g, origin, variable_to_index)
-        add_edge!(g, origin_index, index)
+        for origin in getorigins(x)
+            origin_index = get_or_add_variable!(g, origin, variable_to_index)
+            add_edge!(g, origin_index, index)
+        end
     end
 
     return index
