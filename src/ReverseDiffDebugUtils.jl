@@ -110,14 +110,33 @@ end
 
 variables(g::MetaDiGraph) = [v for v in vertices(g) if get_prop(g, v, :nodetype) == :variable]
 
+nodelabels(g::MetaDiGraph) = [get_prop(g, v, :label) for v in vertices(g)]
+function nodecolors(g::MetaDiGraph)
+    colors = []
+    for v in vertices(g)
+        if get_prop(g, v, :nodetype) == :variable
+            if get_prop(g, v, :is_input)
+                push!(colors, "green")
+            elseif get_prop(g, v, :is_output)
+                push!(colors, "red")
+            else
+                push!(colors, "blue")
+            end
+        else
+            push!(colors, "white")
+        end
+    end
+
+    return colors
+end
+
 function plothtml(f, args...; kwargs...)
     return plothtml(make_graph(f, args...); kwargs...)
 end
 function plothtml(g::MetaDiGraph; kwargs...)
-    nodelabels = [get_prop(g, v, :label) for v in vertices(g)]
     return gplothtml(
         g;
-        nodelabel=nodelabels,
+        nodelabel=nodelabels(g),
         arrowlengthfrac=0.025,
         kwargs...
     )
