@@ -111,19 +111,22 @@ end
 variables(g::MetaDiGraph) = [v for v in vertices(g) if get_prop(g, v, :nodetype) == :variable]
 
 nodelabels(g::MetaDiGraph) = [get_prop(g, v, :label) for v in vertices(g)]
-function nodecolors(g::MetaDiGraph)
+function nodecolors(
+    g::MetaDiGraph;
+    input_color="green", output_color="red", variable_color="black", instruction_color="white"
+)
     colors = []
     for v in vertices(g)
         if get_prop(g, v, :nodetype) == :variable
             if get_prop(g, v, :is_input)
-                push!(colors, "green")
+                push!(colors, input_color)
             elseif get_prop(g, v, :is_output)
-                push!(colors, "red")
+                push!(colors, output_color)
             else
-                push!(colors, "blue")
+                push!(colors, variable_color)
             end
         else
-            push!(colors, "white")
+            push!(colors, instruction_color)
         end
     end
 
