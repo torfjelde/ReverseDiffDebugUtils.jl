@@ -1,5 +1,7 @@
 export plotgraphviz4
 
+using GraphGraphviz
+
 plotgraphviz(f, args...; kwargs...) = plotgraphviz(make_graph(f, args...); kwargs...)
 function plotgraphviz(g::MetaDiGraph; kwargs...)
     auto_kwargs = (

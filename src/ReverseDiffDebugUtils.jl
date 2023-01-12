@@ -5,8 +5,6 @@ using ReverseDiff
 using Graphs, MetaGraphs
 using GraphPlot
 
-using GraphGraphviz
-
 using OrderedCollections: OrderedDict
 
 export make_graph, plothtml, plotgraphviz
