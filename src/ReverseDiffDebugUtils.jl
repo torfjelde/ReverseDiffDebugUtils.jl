@@ -151,6 +151,9 @@ function plothtml(g::MetaDiGraph; kwargs...)
     )
 end
 
+plotgraphviz(f, args...; kwargs...) = plotgraphviz(make_graph(f, args...); kwargs...)
+plotgraphviz(g::MetaDiGraph; kwargs...) = error("GraphGraphviz.jl is not installed.")
+
 function __init__()
     @require GraphGraphviz="692621d9-3805-4619-b662-17f1a5556d87" include("graphviz.jl")
 end
