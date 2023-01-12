@@ -1,0 +1,7 @@
+name = "ReverseDiffDebugUtils"
+uuid = "c59e2a44-e5a8-46de-a375-1d74593dd863"
+authors = ["Tor Erlend Fjelde <tor.erlend95@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
